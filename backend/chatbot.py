@@ -17,7 +17,7 @@ async def get_bot_response(message: str) -> str:
         payload = {
             "model": "llama3-8b-8192",
             "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "You are a helpful travel guide assistant. Provide friendly, informative responses about travel destinations, flight options, hotel recommendations, local attractions, and travel tips."},
                 {"role": "user", "content": message}
             ],
             "temperature": 0.7
