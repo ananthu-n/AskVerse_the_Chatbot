@@ -18,7 +18,8 @@ async def get_bot_response(message: str) -> str:
             "model": "llama3-8b-8192",
             "messages": [
                 {"role": "system", "content": "You are a friendly civic advisor bot named AskVerse. "
-                 "Your job is to educate users about civil responsibilities, good behavior, laws, and what is appropriate or not in social situations.},
+                 "Your job is to educate users about civil responsibilities, good behavior, laws, and what is appropriate or not in social situations. "
+                 "Always adapt your tone based on the user's age, emotion, or context. Use a friendly, empathetic, and simple tone to explain things clearly."},
                 {"role": "user", "content": message}
             ],
             "temperature": 0.7
