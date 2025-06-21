@@ -1,76 +1,112 @@
-let token = "";
+// script.js
+const API = 'https://askverse-the-chatbot.onrender.com';
 
-// Login function to authenticate user and get JWT token
-async function login() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const chatInput = document.getElementById('chat-input');
+  const chatBox = document.getElementById('chat-box');
 
-  if (!username || !password) {
-    alert("Please enter both username and password.");
-    return;
-  }
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
 
-  try {
-    const response = await fetch("https://askverse-the-chatbot.onrender.com/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.access_token) {
+          localStorage.setItem('token', data.access_token);
+          window.location.href = 'chat.html';
+        } else {
+          alert('Login failed');
+        }
+      } catch (err) {
+        alert('Error logging in');
+      }
     });
-
-    if (!response.ok) {
-      throw new Error("Login failed");
-    }
-
-    const data = await response.json();
-    token = data.access_token;
-    alert("✅ Login successful! You can now chat with the bot.");
-  } catch (error) {
-    alert("❌ Login error: " + error.message);
-  }
-}
-
-// Function to send a message to the chatbot
-async function sendMessage() {
-  const userInput = document.getElementById("userInput");
-  const message = userInput.value.trim();
-
-  if (!message) return;
-  if (!token) {
-    alert("⚠️ Please log in before sending a message.");
-    return;
   }
 
-  // Display user's message
-  addMessage("🧑 " + message, "user");
-  userInput.value = "";
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('register-username').value;
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      const role = document.getElementById('register-role').value || "user";
+
+      try {
+        const res = await fetch(`${API}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password, role })
+        });
+        if (res.ok) {
+          alert('✅ Registration successful! Login now.');
+          window.location.href = 'index.html';
+        } else {
+          const err = await res.json();
+          alert('❌ ' + (err.detail || 'Registration failed'));
+        }
+      } catch (err) {
+        alert('Error during registration.');
+      }
+    });
+  }
+
+  if (chatInput && chatBox) {
+    document.querySelector('button').addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendChat();
+    });
+  }
+});
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const prompt = input.value.trim();
+  const chatBox = document.getElementById('chat-box');
+  const token = localStorage.getItem('token');
+
+  if (!prompt || !token) return;
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user-msg';
+  userMsg.textContent = "🧑 " + prompt;
+  chatBox.appendChild(userMsg);
+
+  input.value = '';
 
   try {
-    const response = await fetch("https://askverse-the-chatbot.onrender.com/chat/chat", {
-      method: "POST",
+    const res = await fetch(`${API}/chat/chat`, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ prompt: message })
+      body: JSON.stringify({ prompt })
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to get response from bot.");
-    }
-
-    const data = await response.json();
-    addMessage("🤖 " + data.response, "bot");
-  } catch (error) {
-    addMessage("⚠️ Bot error: " + error.message, "bot");
+    const data = await res.json();
+    const botMsg = document.createElement('div');
+    botMsg.className = 'chat-msg bot-msg';
+    botMsg.textContent = "🤖 " + data.response;
+    chatBox.appendChild(botMsg);
+  } catch (err) {
+    const errMsg = document.createElement('div');
+    errMsg.className = 'chat-msg bot-msg';
+    errMsg.textContent = "⚠️ Failed to get response.";
+    chatBox.appendChild(errMsg);
   }
+
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Function to add message bubbles to chat
-function addMessage(text, type) {
-  const chatBox = document.getElementById("chatBox");
-  const messageElement = document.createElement("div");
-  messageElement.className = `chat-msg ${type}`;
-  messageElement.textContent = text;
-  chatBox.appendChild(messageElement);
-  chatBox.scrollTop = chatBox.scrollHeight;
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = 'index.html';
 }
